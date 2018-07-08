@@ -1,5 +1,10 @@
-import socket
+#-------------------------------------------------#
+# Title: server.py
+# Dev:   Scott Luse
+# Date:  July 7, 2018
+#-------------------------------------------------#
 
+import socket
 
 class Server(object):
     """
@@ -79,9 +84,12 @@ class Server(object):
         :return: str
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        return [
+            "You are in the south lobby. You hear running water in the distance.",
+            "You are in the west room. An open door is open leading to a deck.",
+            "You are in the east room with a fireplace in the corner.",
+            "You are in the north room with a large window. Something hits you from behind.",
+        ][room_number]
 
     def greet(self):
         """
@@ -105,12 +113,15 @@ class Server(object):
         This is a BLOCKING call. It should not return until there is some input from
         the client to receive.
          
-        :return: None 
+        :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        # while loop not working with b'\n'
+        # is there a hidden character coming over from client?
+        # while b'\n' not in received:
 
-        pass
+        received = b'' + self.client_connection.recv(16)
+        self.input_buffer = received.decode('utf-8')
 
     def move(self, argument):
         """
@@ -133,9 +144,16 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        if self.room == 0 and argument == "west": self.room = 1
+        if self.room == 0 and argument == "east": self.room = 2
+        if self.room == 0 and argument == "north": self.room = 3
 
-        pass
+        if self.room == 1 and argument == "east": self.room = 0
+        if self.room == 2 and argument == "west": self.room = 0
+        if self.room == 3 and argument == "south": self.room = 0
+
+        # load buffer with description using updated room number
+        self.output_buffer = self.room_description(self.room)
 
     def say(self, argument):
         """
@@ -151,9 +169,7 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.output_buffer = 'You say, "{}"'.format(argument)
 
     def quit(self, argument):
         """
@@ -167,9 +183,8 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.done = True
+        self.output_buffer = "Goodbye!"
 
     def route(self):
         """
@@ -183,9 +198,26 @@ class Server(object):
         :return: None
         """
 
-        # TODO: YOUR CODE HERE
+        if "quit" in self.input_buffer:
+            self.quit("now")
 
-        pass
+        elif "move north" in self.input_buffer:
+            self.move("north")
+
+        elif "move south" in self.input_buffer:
+            self.move("south")
+
+        elif "move west" in self.input_buffer:
+            self.move("west")
+
+        elif "move east" in self.input_buffer:
+            self.move("east")
+
+        elif "say" in self.input_buffer:
+            self.say(self.input_buffer.replace("say", ""))
+
+        else:
+            self.output_buffer = self.input_buffer
 
     def push_output(self):
         """
@@ -197,9 +229,7 @@ class Server(object):
         :return: None 
         """
 
-        # TODO: YOUR CODE HERE
-
-        pass
+        self.client_connection.sendall(b"OK! " + self.output_buffer.encode() + b"\n")
 
     def serve(self):
         self.connect()
